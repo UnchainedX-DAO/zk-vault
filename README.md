@@ -2,11 +2,13 @@
 
 **Quantum-secure, distributed, and persistent encrypted backup.**
 
+*Encrypt it once. Keep it for a thousand years.*
+
 > Store data that must never be exposed on the internet, making data management easy, while achieving quantum-secure distributed persistent data with no single point of failure.
 
 ## What is zk-vault?
 
-zk-vault encrypts your important data on your device with post-quantum cryptography and stores it across a distributed network with no single point of failure. No server, validator, or storage provider ever sees your plaintext data.
+zk-vault encrypts your important data on your device with post-quantum cryptography and stores it across a distributed network with no single point of failure. No server, validator, or storage provider ever sees your plaintext data. It is built for data that must not disappear for millennia — ideally forever.
 
 **"zk" means:** Today, zero-knowledge architecture — the system never accesses your plaintext. In the future, zero-knowledge proofs will be integrated to enable cryptographic verification without revealing data. See [docs/PRODUCT.md](docs/PRODUCT.md) for the full vision.
 

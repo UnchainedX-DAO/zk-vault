@@ -12,6 +12,8 @@
 
 > Store data that must never be exposed on the internet, making data management easy, while achieving quantum-secure distributed persistent data with no single point of failure.
 
+**Permanence across time.** To "no single point of failure" in *space*, zk-vault adds a fourth pillar in *time*: data built to outlive its owner and survive for millennia — ideally forever. Permanence is treated honestly as a probability to be maximized (over-provisioned, diversified endowment economics plus self-healing migration), not a guarantee — with Layer 0 (local backup) as the ultimate backstop. Note that *existence* permanence and *confidentiality* permanence are distinct: because any cipher eventually weakens, long-horizon secrecy depends on crypto-agility (re-wrapping keys under future schemes), not on any single algorithm lasting forever.
+
 The product is born from a personal need: backing up important Google Drive data (deeply nested directories of Docs, Slides, Spreadsheets) in a way that is encrypted, distributed, and resilient — where no single entity can read, lose, or tamper with the data.
 
 ### What makes zk-vault different
@@ -1010,6 +1012,30 @@ Elevated from a scaling concern to the core of the millennia-permanence guarante
 - **Invariant:** become general by *exposing existing primitives* (PQ crypto, durable storage, guardian recovery, anchoring, ZKP) as programmable — **not** by bolting on a generic VM
 - **Unlock condition:** the backup product has real traction + Phase 3 ZKP is in production
 - Explicitly **not** chasing generic DeFi / NFT / gaming / high-frequency trading
+
+### Technology Candidates *(under evaluation — 検討段階)*
+
+Frontier primitives mapped to the phases above. All are **candidates, not commitments**. Selected for mission-alignment (trust mathematics, post-quantum, permanence, self-sovereignty); primitives that derive security from hardware / physical trust are deliberately excluded.
+
+**Build-now candidates** — touch existing Endowment / anchor / guardian / Merkle assets:
+- **Crypto-agility / CBOM** (→ D3) — versioned, swappable crypto suites. Also the meta-answer to "the PQ variant isn't mature yet": adopt mature primitives now, migrate later
+- **Possession proof → self-healing** (→ Phase 4) — challenge-response proof of retrievability (Merkle-first, STARK later) as the trigger to re-replicate lost data
+- **Dynamic / proactive secret sharing (DPSS)** (→ Phase 3) — guardian committees refresh and rotate membership without reconstructing the key; essential for guardians that must survive across generations
+- **Timelock encryption** (→ Phase 3) — drand/tlock-style "open after time T"; the buildable form of a dead-man's-switch / inheritance release (caveat: beacon liveness is not millennia-scale)
+- **Threshold OPRF** (→ Phase 3) — prove a secret recovery answer with no on-chain hash (classical-first under the hybrid stance)
+
+**Future candidates:**
+- **Triple-hybrid KEM** (X25519 + ML-KEM + HQC) — a code-based third leg for hardness diversity, offered as a crypto-agility suite option
+- **PQ threshold signatures** (threshold ML-DSA) — collective guardian/validator signing with no single point of failure
+- **Silent-setup (hintless) threshold encryption** — removes the DKG ceremony if a threshold-encryption route is adopted
+- **PQ threshold randomness beacon** — fair governance lotteries and parameter-update ordering
+
+**Research candidates** — principled but not yet practical (narrative / Phase 6):
+- **Witness Encryption** — "decrypt only when a condition is proven, with no releaser and no TEE"; the pure-math ideal behind conditional disclosure. No efficient construction exists yet — timelock encryption is its buildable stand-in
+- **Registered / evasive-LWE ABE** — policy-based decryption with no central authority
+- **Ultra-long archival media** (glass / ceramic WORM, DNA) — optional permanent-tier substrates; **integrate, don't build** — core permanence stays migration-based on commodity media
+
+> **Excluded on principle:** certified quantum-randomness beacons and physical VDFs — they derive security from *hardware / physics*, contradicting "trust mathematics". A threshold beacon and timelock encryption cover the same needs with math.
 
 ---
 
