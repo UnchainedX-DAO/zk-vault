@@ -10,27 +10,7 @@
 
 zk-vault encrypts your important data on your device with post-quantum cryptography and stores it across a distributed network with no single point of failure. No server, validator, or storage provider ever sees your plaintext data. It is built for data that must not disappear for millennia — ideally forever.
 
-**"zk" means:** Today, zero-knowledge architecture — the system never accesses your plaintext. In the future, zero-knowledge proofs will be integrated to enable cryptographic verification without revealing data. See [docs/PRODUCT.md](docs/PRODUCT.md) for the full vision.
-
-## Competitive Landscape
-
-No existing project combines all of zk-vault's pillars. The closest competitors each cover only a subset:
-
-| | zk-vault | Jackal Protocol | Lighthouse | Storj | Filecoin | Lumera |
-|---|---|---|---|---|---|---|
-| Own dApp chain | **Yes (BFT, PoA→DPoS)** | Cosmos L1 | No (on Filecoin) | No | Yes (own chain) | Cosmos L1 |
-| PQ hybrid encryption | **ML-KEM-768 + X25519** | No | No | No | No | No |
-| Multi-mode (A/B/C) | **Personal + Native + Filecoin** | Chain-only | Filecoin-only | Centralized | Filecoin-only | Chain-only |
-| Layer 0 (local-first) | **Always independent** | No | No | No | No | No |
-| BTC + ETH anchoring | **Dual-chain Merkle root** | Babylon (chain-level) | No | No | No | No |
-| Endowment (pay-once) | **Multi-source pool (Mode B)** | Prepaid subscription | Yes | No | No (deals expire) | Yes |
-| Guardian recovery | **Shamir SSS + PQ KEM encryption** | No | No | No | No | No |
-| ZKP (STARK, PQ-safe) | **Planned (risc0)** | No | No | No | zk-SNARKs (not PQ) | No |
-| Migration path | **Mode A→B/C, no re-encrypt** | No | No | No | No | No |
-
-The combination of post-quantum cryptography with a purpose-built backup chain is a complete whitespace — PQ chains (QRL, QANplatform) are general-purpose ledgers, while storage chains (Jackal, Crust, Walrus) use classical cryptography only.
-
-See [docs/PRODUCT.md](docs/PRODUCT.md) for detailed competitive analysis.
+**"zk" carries two meanings, and zk-vault pursues both:** (1) **zero-knowledge architecture** — no server, validator, or storage provider ever sees your plaintext; (2) **zero-knowledge proofs** — cryptographic verification of facts about your data without revealing it.
 
 ## Architecture
 
@@ -192,61 +172,6 @@ All users' roots are batched into a single Super Merkle Tree, so one transaction
 | 1 | ~$0.50 |
 | 1,000 | ~$0.0005 |
 | 100,000 | ~$0.000005 |
-
-## Threat Model
-
-| Threat | Defense |
-|---|---|
-| Quantum computers (harvest now, decrypt later) | ML-KEM-768 + ML-DSA-65 |
-| PQ algorithm break | X25519 + Ed25519 classical fallback |
-| Network interception | Client-side encryption before transmission |
-| Validator compromise | Zero-knowledge architecture: ciphertext only |
-| Storage single point of failure | Mode A: provider + Layer 0 / Chain Mode: Mode B + Mode C + Layer 0 |
-| Data tampering | Merkle tree + BTC/ETH anchoring |
-| Passphrase brute force | Argon2id (256MB memory-hard) + optional keyfile + optional hardware key |
-| Memory dump | `zeroize` on all key material |
-| Passphrase loss | Mnemonic recovery (Mode A) or guardian network (Mode B/C) |
-| Device theft (Mode A) | Argon2id is sole defense; keys cannot be revoked |
-| Device theft (Mode B/C) | `RevokeKeys` tx invalidates old keys on chain |
-| Chain failure | Layer 0 is always independent |
-
-## Resource Impact
-
-zk-vault is designed to minimize its external footprint.
-
-| Resource | Impact | Mitigation |
-|---|---|---|
-| Bitcoin/Ethereum block space | 32 bytes per anchor tx | All users batched into 1 tx via Super Merkle Tree |
-| Validator energy (Mode B) | PoA/DPoS node operation | No PoW mining — comparable to a standard server |
-| Cloud storage (Mode A) | Standard provider usage | No new infrastructure; uses existing cloud providers |
-| Per-file encryption overhead | ~1.2 KB per file | Negligible for typical file sizes |
-| Argon2id KDF | 256MB memory per key derivation | Intentional cost for brute-force resistance; runs once per session |
-
-**No PoW mining. No blockchain bloat (32-byte roots only). No spam transactions (batched). No plaintext data ever leaves the client.**
-
-See [docs/PRODUCT.md](docs/PRODUCT.md) for the full impact analysis.
-
-## Tech Stack
-
-| Component | Technology |
-|---|---|
-| Language | Rust (2021 edition) |
-| PQ KEM | `pqcrypto-kyber` (ML-KEM-768) |
-| PQ Signatures | `pqcrypto-dilithium` (ML-DSA-65) |
-| Symmetric | `chacha20poly1305` (XChaCha20-Poly1305) |
-| Classical KEM | `x25519-dalek` |
-| Classical Signatures | `ed25519-dalek` |
-| Hashing | `blake3` |
-| KDF | `argon2` (Argon2id) |
-| Memory safety | `zeroize` |
-| Mnemonic recovery | `bip39` (BIP-39 24-word phrases) |
-| Shamir SSS | `sharks` (Shamir Secret Sharing over GF(256)) |
-| BFT Consensus | `malachitebft` (Informal Systems) |
-| HTTP Server | `axum` |
-| S3 Storage | `rust-s3` |
-| Bitcoin anchoring | `bitcoin` (rust-bitcoin) |
-| Ethereum anchoring | `alloy` |
-| CLI | `clap` |
 
 ## Development
 
