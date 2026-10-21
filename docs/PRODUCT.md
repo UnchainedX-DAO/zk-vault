@@ -645,57 +645,33 @@ Currently, the anchor proves "this hash existed at this time." With ZKP (see Sec
 
 ## 7. Zero-Knowledge Proofs (ZKP)
 
-> **Status: To be evaluated in later phases.**
-> The following represents the full design space of ZKP applications in zk-vault.
-> Adoption of each use case will be decided in future phases based on feasibility,
-> cost, and user need.
+> **Status: Committed.** ZKP is on the roadmap, not a maybe. This section lists only
+> what zk-vault plans to build; v1 / post-v1 timing is tracked in the roadmap.
 
-### Current state
+### What ZKP does here
 
-zk-vault does not currently generate or verify zero-knowledge proofs. The "zk" in the name refers to the zero-knowledge architecture (server/validators never access plaintext).
+A zero-knowledge proof lets a prover show that a computation ran correctly — optionally over private inputs that stay hidden — producing a proof that is small and cheap to verify without re-running the computation. zk-vault runs these as Rust guest programs in a **STARK zkVM (risc0)**: hash-based, quantum-resistant, and free of trusted setup — consistent with the post-quantum stance. Elliptic-curve zk-SNARKs (Groth16, Halo2) are non-PQ and therefore not used. (Filecoin's PoSt in Mode C uses zk-SNARKs internally, but that is Filecoin's concern, not zk-vault's.)
 
-However, the system already benefits from ZKP indirectly: Filecoin's PoSt (Mode C) uses zk-SNARKs internally to prove storage providers hold data.
+ZKP is deliberately confined to statements that reduce to hashing, Merkle paths, and set membership — where proving is cheap — and is applied over digests and commitments, never over bulk ciphertext (which would be prohibitively expensive to prove).
 
-### Potential ZKP applications
+### Planned proofs
 
-The following 10 use cases have been identified across the entire data lifecycle:
+| Proof | What it proves (without revealing) | Timing |
+|---|---|---|
+| **Verified anchor** — correct Merkle construction | the anchored root was correctly built from the real leaves, upgrading the BTC/ETH anchor from a bare hash to a verified commitment | **v1** |
+| **Guardian knowledge proof** | the holder knows a recovery secret, with no hash stored on-chain (immune to dictionary attacks) | **v1** |
+| **Selective disclosure** | a file meeting a stated property exists in the backup, revealing nothing else | post-v1 |
+| **Retention / completeness compliance** | a dataset has been retained for a period, or a backup is complete per policy — for auditors and regulators, without exposing data | post-v1 |
+| **Guardian-set validity** | the registered guardian set meets its threshold and policy, without revealing who the guardians are | post-v1 |
+| **Non-possession / deletion** | a file is absent from the vault (e.g., right-to-be-forgotten) | post-v1 |
+| **Recursive aggregation** | all of the above combined hierarchically into a single proof | post-v1 |
 
-**During backup:**
+### Recursive aggregation (end state)
 
-| # | Use case | What it proves | Without revealing |
-|---|---|---|---|
-| 1 | **Proof of Provenance** | Data was obtained from an authenticated source (e.g., Google Drive API) | The data itself |
-| 2 | **Proof of Correct Encryption** | Ciphertext was produced by correctly encrypting some plaintext with the correct algorithm and key | Plaintext, key, nonce |
-| 3 | **Proof of Correct Merkle Construction** | Merkle tree was correctly built from N leaf hashes, producing root X | Individual leaf hashes |
-| 4 | **Proof of Completeness** | All N files from the data source are included in the backup; none missing | The file list |
-
-**During storage:**
-
-| # | Use case | What it proves | Without revealing |
-|---|---|---|---|
-| 5 | **Proof of Replication** (Mode B) | A validator holds a correct copy of the data | The data itself |
-| 6 | **Cross-Mode Consistency** | Data in Mode B and Mode C is identical | Either copy of the data |
-
-**During recovery and access:**
-
-| # | Use case | What it proves | Without revealing |
-|---|---|---|---|
-| 7 | **Guardian Knowledge Proof** | The user knows the answer to a recovery challenge | The answer itself |
-| 8 | **Selective Disclosure** | A file matching certain criteria exists in the backup | Other files or file contents |
-| 9 | **Anonymous Retrieval** | The requester has access rights to the requested data | The requester's identity |
-
-**System-wide:**
-
-| # | Use case | What it proves | Without revealing |
-|---|---|---|---|
-| 10 | **Recursive Proof Aggregation** | All of the above, combined into a single proof | Everything above |
-
-### Recursive proof aggregation
-
-The most powerful application. Individual proofs are aggregated hierarchically:
+Individual proofs are aggregated hierarchically so that one anchor covers everything:
 
 ```
-Per-file proof:     "File X was correctly encrypted"
+Per-file proof:     "File X's leaf is correct"
        | aggregate
 Per-backup proof:   "All N files in this backup are correct"
        | aggregate
@@ -706,20 +682,11 @@ Per-epoch proof:    "All users' backups in this period are correct"
 Bitcoin OP_RETURN:  32 bytes that cover EVERYTHING
 ```
 
-A single 32-byte Bitcoin anchor proves the correctness of all users' all backups' all files. The density of meaning in those 32 bytes is vastly different from a simple hash.
+A single 32-byte anchor then attests to the correctness of all users' all backups' all files.
 
-### ZKP technology considerations
+### Deliberately not ZKP
 
-The system's post-quantum commitment (ML-KEM-768, ML-DSA-65) creates a constraint: the proof system should also be quantum-resistant.
-
-| Proof system | Quantum-resistant | Compatibility |
-|---|---|---|
-| Groth16 (arkworks) | No (elliptic curve) | Inconsistent with PQ stance |
-| Halo2 | No (elliptic curve) | Inconsistent with PQ stance |
-| **STARKs (e.g., risc0)** | **Yes (hash-based)** | **Consistent** |
-| Plonky2 | Partial | Uncertain |
-
-STARKs (via risc0 zkVM) are the most natural fit: quantum-resistant, and existing Rust encryption code can run directly inside the zkVM as a guest program.
+Some needs are met more cheaply by other primitives and are intentionally *not* proven in zero knowledge: possession / retrievability (a non-ZK challenge-response proof, part of self-healing), key rotation (a signature from the old key via `RevokeKeys`), and source completeness (a signed manifest from the source). Cross-mode consistency, anonymous retrieval, endowment accounting, and lottery fairness are covered by hash equality, access capabilities, BFT consensus, and a randomness beacon respectively.
 
 ---
 
