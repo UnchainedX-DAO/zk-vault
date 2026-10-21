@@ -87,9 +87,7 @@ All centralized products share the same fundamental weakness: trust a single com
 
 ### The "zk" in zk-vault
 
-Today, "zk" refers to our **zero-knowledge architecture** — the system is designed so that no server, validator, or storage provider ever has access to plaintext data. All encryption and decryption happens on the user's device.
-
-As the product evolves, "zk" will also encompass **zero-knowledge proofs** (ZKP) — cryptographic proofs that allow verification of facts without revealing underlying data. See [Section 7](#7-zero-knowledge-proofs-zkp) for the full vision.
+"zk" carries two meanings, and zk-vault pursues both. The first is **zero-knowledge architecture** — the system is designed so that no server, validator, or storage provider ever has access to plaintext data; all encryption and decryption happen on the user's device. The second is **zero-knowledge proofs** (ZKP) — cryptographic proofs that verify facts about the data without revealing it. ZKP is a committed part of the design, not a maybe; see [Section 7](#7-zero-knowledge-proofs-zkp) for what is planned and when.
 
 ---
 
@@ -917,96 +915,7 @@ To be introduced at the DPoS phase. The Endowment module uses abstract units (`u
 
 ---
 
-## 10. Roadmap
-
-> **Status: Refined (rev 3).** Integrates the original four-phase plan with the
-> permanence-economics and mutability decisions. Phases 1–2 are shipped. Phase 0
-> (strategy + design specs) is the current gate that reshapes Phases 2–5.
->
-> **Organizing principle:** the new economic / permanence / mutability work is not a
-> separate track — it *deepens* Phase 2 (Endowment → permanent fund) and *reframes*
-> Phase 4 (scaling → permanence), and adds a governable-parameter layer across Phase 5.
-> Nothing from the original plan is dropped; several items are moved and extended.
-
-### Phase 0 — Strategy & Design *(non-code, current)*
-
-Decisions here reshape the downstream phases before any implementation.
-
-- **Strategy gate:** fix the one-line differentiation axis and the custom-chain justification
-- **D1 — Economic model spec:** millennia-scale endowment — two regimes (early drawdown → late preserve-principal), a **sacrosanct principal** never touched by opex, a **diversified real-yield basket** (not the native token alone), a smoothed spend rule, and pessimistic pricing. **Includes the pricing function:** `price = f(size, mode, redundancy factor, permanence tier)` — the principal scales per-byte, so price is size-driven by construction; defines per-mode / permanent-tier **size-feasibility limits** and a minimum floor for tiny objects
-- **D2 — Business model spec:** sale margin + **treasury-send ratio (governable)**, sized against real opex. zk-vault's responsibility ends at **sending funds to the DAO treasury**; contributor distribution is done DAO-side (out of scope)
-- **D3 — Mutable / immutable boundary spec:** what is permanent (data commitments) vs governable (crypto suites, economic parameters, treasury %); the upgrade mechanism; **crypto-agility** (re-wrap the KEM layer under future PQ suites without touching bulk ciphertext)
-
-### Phase 1 — Foundation ✅ *(shipped)*
-
-- Layer 0 CLI local encrypted backup, round-trip verification, hash chain, write-ahead log for crash recovery
-
-### Phase 2 — Chain + Storage ✅ *(feature-complete → deepening + hardening)*
-
-- **Shipped:** BFT (PoA), Mode B (native) + Mode C (Filecoin), Endowment module, BTC/ETH anchoring automation, RocksDB, JSON-RPC — replaces the API server + PostgreSQL
-- **Deepening (from D1/D2):** evolve the Endowment from a *simple pool* into a *permanent fund* — preserve-principal + diversified yield + smoothed spend rule + **treasury-send transaction** + **governable parameters**
-- **Hardening:** multi-node testnet E2E, fault injection, on-testnet anchoring
-
-### Phase 3 — Recovery + ZKP 🟡 *(partial)*
-
-- Guardian recovery ✅ (Shamir + PQ-encrypted shares + chain transactions)
-- **ZKP scoped to ONE risc0/STARK PoC** (not all 10 use cases); integrate its commitment into the anchor
-- **Knowledge proofs for guardians** (ZKP recovery challenge — prove a secret answer with no on-chain hash)
-- **Crypto-agility (from D3):** re-wrap the KEM layer under future PQ suites — required for millennia-scale confidentiality
-- Dead Man's Switch; guardian key rotation
-
-### Phase 4 — Permanence & Scale *(reframed from "Expansion / scaling")*
-
-Elevated from a scaling concern to the core of the millennia-permanence guarantee.
-
-- Reed-Solomon erasure coding across validators / regions / jurisdictions (also lifts the Mode B **large-data** ceiling)
-- **Self-healing migration:** detect lost or expired replicas → re-replicate from survivors
-- Permanent tier: Mode B + Mode C + Layer 0 simultaneously
-- Sharding; PoA → DPoS activation
-
-### Phase 5 — Ecosystem & Token
-
-- **Ongoing source expansion** (continuous, never a closed list): Gmail, Notion, GitHub, Dropbox, iCloud, Slack, local filesystems, databases, S3 buckets, … — added continuously via the pluggable `DataSource` trait in `core`
-- Selective Disclosure (depends on ZKP)
-- Access & auth extensions: session keys, external-wallet auth, YubiKey hardware key (carried from §9)
-- **Tokenomics — subordinate to the D1 economic model** (decide economics before denomination)
-- **DAO governance = governable-parameter control** (treasury %, endowment rates, crypto-suite upgrades)
-- Composability (insurance / legal / compliance verification)
-
-### Phase 6 — Horizon: Programmable Confidential Data Layer *(north star)*
-
-- The terminal vision: a general-purpose **confidential × post-quantum × storage-native** chain
-- **Invariant:** become general by *exposing existing primitives* (PQ crypto, durable storage, guardian recovery, anchoring, ZKP) as programmable — **not** by bolting on a generic VM
-- **Unlock condition:** the backup product has real traction + Phase 3 ZKP is in production
-- Explicitly **not** chasing generic DeFi / NFT / gaming / high-frequency trading
-
-### Technology Candidates *(under evaluation — 検討段階)*
-
-Frontier primitives mapped to the phases above. All are **candidates, not commitments**. Selected for mission-alignment (trust mathematics, post-quantum, permanence, self-sovereignty); primitives that derive security from hardware / physical trust are deliberately excluded.
-
-**Build-now candidates** — touch existing Endowment / anchor / guardian / Merkle assets:
-- **Crypto-agility / CBOM** (→ D3) — versioned, swappable crypto suites. Also the meta-answer to "the PQ variant isn't mature yet": adopt mature primitives now, migrate later
-- **Possession proof → self-healing** (→ Phase 4) — challenge-response proof of retrievability (Merkle-first, STARK later) as the trigger to re-replicate lost data
-- **Dynamic / proactive secret sharing (DPSS)** (→ Phase 3) — guardian committees refresh and rotate membership without reconstructing the key; essential for guardians that must survive across generations
-- **Timelock encryption** (→ Phase 3) — drand/tlock-style "open after time T"; the buildable form of a dead-man's-switch / inheritance release (caveat: beacon liveness is not millennia-scale)
-- **Threshold OPRF** (→ Phase 3) — prove a secret recovery answer with no on-chain hash (classical-first under the hybrid stance)
-
-**Future candidates:**
-- **Triple-hybrid KEM** (X25519 + ML-KEM + HQC) — a code-based third leg for hardness diversity, offered as a crypto-agility suite option
-- **PQ threshold signatures** (threshold ML-DSA) — collective guardian/validator signing with no single point of failure
-- **Silent-setup (hintless) threshold encryption** — removes the DKG ceremony if a threshold-encryption route is adopted
-- **PQ threshold randomness beacon** — fair governance lotteries and parameter-update ordering
-
-**Research candidates** — principled but not yet practical (narrative / Phase 6):
-- **Witness Encryption** — "decrypt only when a condition is proven, with no releaser and no TEE"; the pure-math ideal behind conditional disclosure. No efficient construction exists yet — timelock encryption is its buildable stand-in
-- **Registered / evasive-LWE ABE** — policy-based decryption with no central authority
-- **Ultra-long archival media** (glass / ceramic WORM, DNA) — optional permanent-tier substrates; **integrate, don't build** — core permanence stays migration-based on commodity media
-
-> **Excluded on principle:** certified quantum-randomness beacons and physical VDFs — they derive security from *hardware / physics*, contradicting "trust mathematics". A threshold beacon and timelock encryption cover the same needs with math.
-
----
-
-## 11. Historical Context
+## 10. Historical Context
 
 ### Original architecture
 
